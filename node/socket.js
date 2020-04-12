@@ -2,7 +2,7 @@ const socketIO = require('socket.io');
 const app = require('./app');
 
 const connect = expressServer => {
-    const io = socketIO.listen( expressServer );
+    const io = socketIO(expressServer);
     io.set('transports', ['websocket']);
     io.on('connection', clientConnected);
 };
@@ -16,6 +16,8 @@ const clientConnected = socket => {
     connectedClients[socket.id].emit('CLIENT CONNECT ACK', true);
 
     socket.on( 'disconnect', () => {
+        console.log(`Client with id ${socket.id} disconnected`);
+
         app.deleteUser(socket.id);
 
         delete connectedClients[socket.id]

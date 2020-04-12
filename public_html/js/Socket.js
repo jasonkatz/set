@@ -7,6 +7,10 @@ define(
 ) {
     var socket = io({transports: ['websocket'], upgrade: false});
 
+    socket.on('reconnect_attempt', () => {
+        socket.io.opts.transports = ['polling', 'websocket'];
+    });
+
     var Socket = {};
 
     Socket.listenForError = function( callback ) {
