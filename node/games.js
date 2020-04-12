@@ -220,7 +220,7 @@ const game = (creatorId, gameName) => {
 
             addFeedMessage(userId, "set", `["${cards[0]}","${cards[1]}","${cards[2]}"]`);
 
-            if (deck.length) {
+            if (deck.length && board.length < 12) {
                 drawThree(indices[2], indices[1], indices[0]);
             }
 
