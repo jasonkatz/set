@@ -22,7 +22,7 @@ const deleteUser = id => {
         return;
     }
 
-    const gameId = users.gameId;
+    const gameId = user.gameId;
     if (gameId) {
         leaveGame(gameId, id);
     }
@@ -171,16 +171,22 @@ const sendGameFeedMessage = (gameId, userId, type, message) => {
 const getGameData = gameId => {
     const gameData = games.getGameData(gameId);
 
-    gameData.owner = users.getUser(gameData.owner).nickname;
+    const owner = users.getUser(gameData.owner);
+    if (owner) {
+        gameData.owner = owner.nickname;
+    }
 
     let scoresByNickname = {};
     Object.keys(gameData.scores).forEach(userId => {
-        scoresByNickname[users.getUser(userId).nickname] = gameData.scores[userId];
+        const user = users.getUser(userId);
+        if (user) {
+            scoresByNickname[user.nickname] = gameData.scores[userId];
+        }
     });
     gameData.scores = scoresByNickname;
 
     gameData.feed = gameData.feed.map(message => ({
-        username: users.getUser(message.userId).nickname,
+        username: users.getUser(message.userId) ? users.getUser(message.userId).nickname : message.userId,
         msgType: message.type,
         data: message.data,
     }));
