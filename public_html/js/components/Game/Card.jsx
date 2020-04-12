@@ -27,7 +27,7 @@ define(
                 <div className="Card column" onClick={this._toggleSelected}>
                     <div className={this.state.className}>
                         <div className="content">
-                            <img src={'img/cards/' + this.props.card + '.png'} style={{width: '100%'}} />
+                            <img src={'img/cards/' + this.props.card + '.png'} style={{width: '100%'}} draggable="false" />
                         </div>
                     </div>
                 </div>

@@ -2,7 +2,7 @@ const socketIO = require('socket.io');
 const app = require('./app');
 
 const connect = expressServer => {
-    const io = socketIO.listen( expressServer );
+    const io = socketIO(expressServer);
     io.set('transports', ['websocket']);
     io.on('connection', clientConnected);
 };
@@ -15,14 +15,16 @@ const clientConnected = socket => {
     connectedClients[socket.id] = socket;
     connectedClients[socket.id].emit('CLIENT CONNECT ACK', true);
 
-    socket.on( 'disconnect', () => {
-        app.deleteUser(socket.id);
+    socket.on( 'disconnect', async () => {
+        console.log(`Client with id ${socket.id} disconnected`);
+
+        await app.deleteUser(socket.id);
 
         delete connectedClients[socket.id]
     });
 
-    socket.on( 'USER ENTER', data => {
-        const user = app.createUser(socket.id, data.nickname);
+    socket.on( 'USER ENTER', async data => {
+        const user = await app.createUser(socket.id, data.nickname);
 
         const obj = {};
 
@@ -41,8 +43,8 @@ const clientConnected = socket => {
         connectedClients[socket.id].emit( 'USER ENTER ACK', obj );
     });
 
-    socket.on( 'USER EXIT', data => {
-        const success = Boolean(app.deleteUser(socket.id));
+    socket.on( 'USER EXIT', async data => {
+        const success = Boolean(await app.deleteUser(socket.id));
 
         if (!success) {
             console.error(`Failed to log out client with id ${socket.id}`);
@@ -53,48 +55,48 @@ const clientConnected = socket => {
         connectedClients[socket.id].emit('USER EXIT ACK', success);
     });
 
-    socket.on( 'LOBBY LIST', () => {
-        const data = app.getLobbyData();
+    socket.on( 'LOBBY LIST', async () => {
+        const data = await app.getLobbyData();
 
         connectedClients[socket.id].emit('LOBBY LIST ACK', data);
     });
 
-    socket.on( 'GAME CREATE', data => {
-        const gameData = app.createGame(socket.id, data.name);
+    socket.on( 'GAME CREATE', async data => {
+        const gameData = await app.createGame(socket.id, data.name);
 
         connectedClients[socket.id].emit('GAME CREATE ACK', gameData);
     });
 
-    socket.on( 'GAME JOIN', data => {
-        const success = app.joinGame(data.id, socket.id);
+    socket.on( 'GAME JOIN', async data => {
+        const success = await app.joinGame(data.id, socket.id);
 
         connectedClients[socket.id].emit('GAME JOIN ACK', success);
     });
 
-    socket.on( 'GAME UPDATE INIT', data => {
-        const gameData = app.triggerGameUpdate(data.id);
+    socket.on( 'GAME UPDATE INIT', async data => {
+        const gameData = await app.triggerGameUpdate(data.id);
     });
 
-    socket.on( 'GAME START', data => {
-        const success = app.startGame(data.id, socket.id);
+    socket.on( 'GAME START', async data => {
+        const success = await app.startGame(data.id, socket.id);
 
         connectedClients[socket.id].emit('GAME START ACK', success);
     });
 
-    socket.on( 'GAME LEAVE', data => {
-        const success = app.leaveGame(data.id, socket.id);
+    socket.on( 'GAME LEAVE', async data => {
+        const success = await app.leaveGame(data.id, socket.id);
 
         connectedClients[socket.id].emit('GAME LEAVE ACK', success);
     });
 
-    socket.on( 'GAME SET', data => {
-        const result = app.evaluateSet(data.id, socket.id, data.set);
+    socket.on( 'GAME SET', async data => {
+        const result = await app.evaluateSet(data.id, socket.id, data.set);
 
         connectedClients[socket.id].emit('GAME SET ACK', result);
     });
 
-    socket.on( 'GAME FEED', data => {
-        app.sendGameFeedMessage(data.id, socket.id, data.type, data.message);
+    socket.on( 'GAME FEED', async data => {
+        await app.sendGameFeedMessage(data.id, socket.id, data.type, data.message);
     });
 };
 

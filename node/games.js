@@ -220,7 +220,7 @@ const game = (creatorId, gameName) => {
 
             addFeedMessage(userId, "set", `["${cards[0]}","${cards[1]}","${cards[2]}"]`);
 
-            if (deck.length) {
+            if (deck.length && board.length < 12) {
                 drawThree(indices[2], indices[1], indices[0]);
             }
 
@@ -304,6 +304,9 @@ const getAllGames = () => {
 const createGame = (creatorId, name) => {
     const newGame = game(creatorId, name);
     games[newGame.id] = newGame;
+
+    console.log(`Created game with id ${newGame.id} and name ${name}`);
+
     return newGame.id;
 };
 
@@ -313,7 +316,11 @@ const startGame = (id, userId) => {
         return false;
     }
 
-    return games[id].start(userId);
+    const result = games[id].start(userId);
+
+    console.log(`Started game with id ${id}`);
+
+    return result;
 };
 
 const addMemberToGame = (id, userId) => {
@@ -323,6 +330,9 @@ const addMemberToGame = (id, userId) => {
     }
 
     games[id].addUser(userId);
+
+    console.log(`Added user ${userId} to game with id ${id}`);
+
     return true
 };
 
@@ -337,6 +347,8 @@ const removeMemberFromGame = (id, userId) => {
         return false;
     }
 
+    console.log(`Removed user ${userId} from game with id ${id}`);
+
     return true;
 };
 
@@ -346,7 +358,11 @@ const evaluateSet = (id, userId, cards) => {
         return -1;
     }
 
-    return games[id].evaluateSet(userId, cards);
+    const result =  games[id].evaluateSet(userId, cards);
+
+    console.log(`Evaluated set by user ${userId} in game ${id} with result ${result}`);
+
+    return result;
 };
 
 const addFeedMessage = (id, userId, type, data) => {
@@ -356,6 +372,9 @@ const addFeedMessage = (id, userId, type, data) => {
     }
 
     games[id].addFeedMessage(userId, type, data);
+
+    console.log(`Added feed message to game with id ${id}`);
+
     return true;
 };
 
@@ -384,6 +403,8 @@ const deleteGame = id => {
     }
 
     delete games[id];
+
+    console.log(`Deleted game with id ${id}`);
 
     return true;
 };

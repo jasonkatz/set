@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "prod": "node index.js >> logs/server.log 2>&1 &"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "console-stamp": "^0.2.9",
     "express": "^4.17.1",
     "socket.io": "^2.3.0",
     "unique-names-generator": "^4.2.0",
