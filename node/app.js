@@ -73,7 +73,12 @@ const createGame = (creatorId, name) => {
 
 const joinGame = (gameId, userId) => {
     if (!games.addMemberToGame(gameId, userId)) {
-        console.error(`Error adding player with id ${creatorId} to game with id ${id}`);
+        console.error(`Error adding player with id ${userId} to game with id ${id}`);
+        return false;
+    }
+
+    if (!users.getUser(userId)) {
+        console.error(`Error getting user with id ${userId}`);
         return false;
     }
 
