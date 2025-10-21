@@ -1,0 +1,26 @@
+{
+  "name": "@set-game/server",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@set-game/shared": "*",
+    "console-stamp": "^3.1.2",
+    "express": "^5.0.1",
+    "socket.io": "^4.8.1",
+    "unique-names-generator": "^4.7.1",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
