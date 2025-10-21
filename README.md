@@ -59,29 +59,29 @@ set/
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+ and yarn
 
 ### Installation
 
 1. Install dependencies for all workspaces:
 ```bash
-npm install
+yarn install
 ```
 
 ### Development
 
 Run both client and server concurrently:
 ```bash
-npm run dev
+yarn dev
 ```
 
 Or run them separately:
 ```bash
 # Terminal 1 - Server
-npm run dev:server
+yarn dev:server
 
 # Terminal 2 - Client
-npm run dev:client
+yarn dev:client
 ```
 
 The application will be available at:
@@ -92,10 +92,10 @@ The application will be available at:
 
 ```bash
 # Build the client
-npm run build
+yarn build
 
 # Start the production server
-npm run start
+yarn start
 ```
 
 In production, the server serves the built client files.
@@ -111,12 +111,12 @@ In production, the server serves the built client files.
 
 ## 🔧 Available Scripts
 
-- `npm run dev` - Run both client and server in development mode
-- `npm run dev:server` - Run only the server
-- `npm run dev:client` - Run only the client
-- `npm run build` - Build the client for production
-- `npm run build:server` - Build the server
-- `npm run start` - Start the production server
+- `yarn dev` - Run both client and server in development mode
+- `yarn dev:server` - Run only the server
+- `yarn dev:client` - Run only the client
+- `yarn build` - Build the client for production
+- `yarn build:server` - Build the server
+- `yarn start` - Start the production server
 
 ## 🆕 What's New in 2.0
 
