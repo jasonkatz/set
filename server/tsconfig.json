@@ -4,7 +4,6 @@
     "module": "ESNext",
     "lib": ["ES2022"],
     "moduleResolution": "bundler",
-    "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -14,8 +13,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@set-game/shared": ["../shared/src/index.ts"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../shared/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
