@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GameState, User, Card as CardType } from '@set-game/shared';
 import { socket } from '../lib/socket';
 import { GameBoard } from '../components/GameBoard';
@@ -23,8 +23,17 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
     finished: false,
   });
   const [selectedCards, setSelectedCards] = useState<Set<CardType>>(new Set());
+  const userRef = useRef(user);
+  const hasLeftRef = useRef(false);
+
+  // Update ref when user changes
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
+    hasLeftRef.current = false; // Reset on mount
+
     socket.gameUpdate(gameId, (data) => {
       if (data.id !== gameId) return;
 
@@ -34,7 +43,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
       if (data.feed.length > 0) {
         const lastFeed = data.feed[data.feed.length - 1];
         if (
-          (lastFeed.msgType === 'fail' && lastFeed.username === user.nickname) ||
+          (lastFeed.msgType === 'fail' && lastFeed.username === userRef.current.nickname) ||
           lastFeed.msgType === 'set'
         ) {
           setSelectedCards(new Set());
@@ -42,12 +51,15 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
       }
     });
 
+    // Only cleanup on unmount if we haven't already left
     return () => {
-      socket.endGame(gameId, user, () => {
-        console.log('Left game');
-      });
+      if (!hasLeftRef.current) {
+        socket.endGame(gameId, userRef.current, () => {
+          console.log('Left game on unmount');
+        });
+      }
     };
-  }, [gameId, user]);
+  }, [gameId]);
 
   const handleCardToggle = (card: CardType, selected: boolean) => {
     setSelectedCards((prev) => {
@@ -74,6 +86,14 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
       if (success) {
         console.log('Game started');
       }
+    });
+  };
+
+  const handleReturnToLobby = () => {
+    // Explicitly leave the game before returning to lobby
+    hasLeftRef.current = true; // Mark that we've left to prevent double cleanup
+    socket.endGame(gameId, userRef.current, () => {
+      onReturnToLobby();
     });
   };
 
@@ -123,7 +143,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
           <Feed feed={gameState.feed} currentUser={user} gameId={gameId} />
           <div className="grid grid-cols-2 gap-4">
             <button
-              onClick={onReturnToLobby}
+              onClick={handleReturnToLobby}
               className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-lg font-medium transition-colors"
             >
               Return to Lobby
