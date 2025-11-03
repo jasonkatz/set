@@ -10,8 +10,8 @@ const API_BASE = config.apiUrl;
 const VERCEL_BYPASS_TOKEN = config.vercelBypassToken;
 
 class APIClient {
-  private lobbyEventSource: EventSource | null = null;
-  private gameEventSource: EventSource | null = null;
+  private lobbyAbortController: AbortController | null = null;
+  private gameAbortController: AbortController | null = null;
 
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
@@ -25,12 +25,59 @@ class APIClient {
     return headers;
   }
 
-  private buildSSEUrl(endpoint: string): string {
-    const url = new URL(`${API_BASE}${endpoint}`, window.location.origin);
-    if (VERCEL_BYPASS_TOKEN) {
-      url.searchParams.set('vercel_protection_bypass', VERCEL_BYPASS_TOKEN);
+  private async streamSSE(endpoint: string, callback: (eventType: string, data: any) => void, abortController: AbortController): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        credentials: 'include',
+        headers: this.getHeaders(),
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`SSE request failed: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        let eventType = '';
+        let eventData = '';
+
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            eventType = line.slice(6).trim();
+          } else if (line.startsWith('data:')) {
+            eventData = line.slice(5).trim();
+          } else if (line === '' && eventType && eventData) {
+            try {
+              const data = JSON.parse(eventData);
+              callback(eventType, data);
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+            eventType = '';
+            eventData = '';
+          }
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('SSE stream error:', error);
+      }
     }
-    return url.toString();
   }
 
   private async fetchAPI(endpoint: string, options?: RequestInit) {
@@ -81,28 +128,22 @@ class APIClient {
   }
 
   startLobby(callback: (data: LobbyData) => void): void {
-    if (this.lobbyEventSource) {
-      this.lobbyEventSource.close();
+    if (this.lobbyAbortController) {
+      this.lobbyAbortController.abort();
     }
 
-    this.lobbyEventSource = new EventSource(this.buildSSEUrl('/lobby/stream'), {
-      withCredentials: true,
-    });
-
-    this.lobbyEventSource.addEventListener('LOBBY UPDATE', (event) => {
-      const data = JSON.parse(event.data);
-      callback(data);
-    });
-
-    this.lobbyEventSource.onerror = (error) => {
-      console.error('Lobby SSE error:', error);
-    };
+    this.lobbyAbortController = new AbortController();
+    this.streamSSE('/lobby/stream', (eventType, data) => {
+      if (eventType === 'LOBBY UPDATE') {
+        callback(data);
+      }
+    }, this.lobbyAbortController);
   }
 
   endLobby(): void {
-    if (this.lobbyEventSource) {
-      this.lobbyEventSource.close();
-      this.lobbyEventSource = null;
+    if (this.lobbyAbortController) {
+      this.lobbyAbortController.abort();
+      this.lobbyAbortController = null;
     }
   }
 
@@ -137,22 +178,16 @@ class APIClient {
   }
 
   gameUpdate(gameId: string, callback: (data: GameState) => void): void {
-    if (this.gameEventSource) {
-      this.gameEventSource.close();
+    if (this.gameAbortController) {
+      this.gameAbortController.abort();
     }
 
-    this.gameEventSource = new EventSource(this.buildSSEUrl(`/games/${gameId}/stream`), {
-      withCredentials: true,
-    });
-
-    this.gameEventSource.addEventListener('GAME UPDATE', (event) => {
-      const data = JSON.parse(event.data);
-      callback(data);
-    });
-
-    this.gameEventSource.onerror = (error) => {
-      console.error('Game SSE error:', error);
-    };
+    this.gameAbortController = new AbortController();
+    this.streamSSE(`/games/${gameId}/stream`, (eventType, data) => {
+      if (eventType === 'GAME UPDATE') {
+        callback(data);
+      }
+    }, this.gameAbortController);
   }
 
   async sendChat(gameId: string, message: string): Promise<void> {
@@ -182,9 +217,9 @@ class APIClient {
   }
 
   async endGame(gameId: string, _user: User, callback: () => void): Promise<void> {
-    if (this.gameEventSource) {
-      this.gameEventSource.close();
-      this.gameEventSource = null;
+    if (this.gameAbortController) {
+      this.gameAbortController.abort();
+      this.gameAbortController = null;
     }
 
     try {
