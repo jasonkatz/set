@@ -3,15 +3,10 @@ import express from 'express';
 import session from 'express-session';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import consoleStamp from 'console-stamp';
 import router from './routes.js';
 import { sseManager } from './sse.js';
 import * as appLogic from './app.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 consoleStamp(console, {
   format: ':date(mm-dd-yyyy HH:MM:ss.l)',
@@ -65,15 +60,6 @@ appLogic.connectBroadcaster((clientIds, event, data) => {
   console.log(`Broadcasting ${event} to ${clientIds.length} clients`);
   sseManager.broadcast(clientIds, event, data);
 });
-
-if (isProduction) {
-  const clientBuildPath = path.join(__dirname, '../../client/dist');
-  app.use(express.static(clientBuildPath));
-
-  app.get(/^\/(?!(auth|lobby|games)).*/, (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-  });
-}
 
 const PORT = process.env.PORT || 3000;
 
