@@ -17,6 +17,14 @@ consoleStamp(console, {
   format: ':date(mm-dd-yyyy HH:MM:ss.l)',
 });
 
+const requiredEnvVars = ['GAME_PASSWORD', 'SESSION_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 

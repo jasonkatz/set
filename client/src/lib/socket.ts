@@ -4,19 +4,41 @@ import type {
   Card,
   User,
 } from '@set-game/shared';
+import { config } from '../env.js';
 
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3000/api' : '/api';
+const API_BASE = config.apiUrl;
+const VERCEL_BYPASS_TOKEN = config.vercelBypassToken;
 
 class APIClient {
   private lobbyEventSource: EventSource | null = null;
   private gameEventSource: EventSource | null = null;
+
+  private getHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (VERCEL_BYPASS_TOKEN) {
+      headers['x-vercel-protection-bypass'] = VERCEL_BYPASS_TOKEN;
+    }
+
+    return headers;
+  }
+
+  private buildSSEUrl(endpoint: string): string {
+    const url = new URL(`${API_BASE}${endpoint}`, window.location.origin);
+    if (VERCEL_BYPASS_TOKEN) {
+      url.searchParams.set('vercel_protection_bypass', VERCEL_BYPASS_TOKEN);
+    }
+    return url.toString();
+  }
 
   private async fetchAPI(endpoint: string, options?: RequestInit) {
     const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
+        ...this.getHeaders(),
         ...options?.headers,
       },
     });
@@ -63,7 +85,7 @@ class APIClient {
       this.lobbyEventSource.close();
     }
 
-    this.lobbyEventSource = new EventSource(`${API_BASE}/lobby/stream`, {
+    this.lobbyEventSource = new EventSource(this.buildSSEUrl('/lobby/stream'), {
       withCredentials: true,
     });
 
@@ -119,7 +141,7 @@ class APIClient {
       this.gameEventSource.close();
     }
 
-    this.gameEventSource = new EventSource(`${API_BASE}/games/${gameId}/stream`, {
+    this.gameEventSource = new EventSource(this.buildSSEUrl(`/games/${gameId}/stream`), {
       withCredentials: true,
     });
 
