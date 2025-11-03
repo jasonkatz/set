@@ -2,7 +2,7 @@
 if (!import.meta.env.VITE_API_URL) {
   throw new Error(
     'Missing required environment variable: VITE_API_URL. ' +
-    'Please set it to your API server URL (e.g., http://localhost:3000/api or https://api.example.com/api)'
+    'Please set it to your API server URL (e.g., http://localhost:3000 or https://set-server.vercel.app)'
   );
 }
 
