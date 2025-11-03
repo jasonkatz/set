@@ -45,9 +45,16 @@ router.post('/auth/login', (req: AuthRequest, res: Response) => {
   req.session.userId = userId;
   req.session.nickname = user.nickname;
 
-  console.log(`User ${user.nickname} (${userId}) logged in`);
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error:', err);
+      res.status(500).json({ success: false, error: 'Failed to save session' });
+      return;
+    }
 
-  res.json({ success: true, user });
+    console.log(`User ${user.nickname} (${userId}) logged in`);
+    res.json({ success: true, user });
+  });
 });
 
 router.post('/auth/logout', requireAuth, (req: AuthRequest, res: Response) => {
