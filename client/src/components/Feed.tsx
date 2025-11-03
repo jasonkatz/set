@@ -65,8 +65,8 @@ export function Feed({ feed, currentUser, gameId }: FeedProps) {
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-lg backdrop-blur flex flex-col h-96">
-      <h3 className="text-xl font-bold p-4 pb-3 text-teal-400 border-b border-slate-700">
+    <div className="bg-white rounded-lg shadow-md border border-slate-200 flex flex-col h-96">
+      <h3 className="text-xl font-bold p-4 pb-3 text-blue-600 border-b border-slate-200">
         Activity Feed
       </h3>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -75,10 +75,10 @@ export function Feed({ feed, currentUser, gameId }: FeedProps) {
             key={index}
             className={`text-sm p-2 rounded ${
               message.msgType === 'set'
-                ? 'bg-green-900/30 border-l-2 border-green-500'
+                ? 'bg-green-100 border-l-2 border-green-500 text-slate-900'
                 : message.msgType === 'fail'
-                ? 'bg-red-900/30 border-l-2 border-red-500'
-                : 'bg-slate-700/30'
+                ? 'bg-red-100 border-l-2 border-red-500 text-slate-900'
+                : 'bg-slate-100 text-slate-900'
             }`}
           >
             <span className="mr-2">{getFeedIcon(message.msgType)}</span>
@@ -94,11 +94,11 @@ export function Feed({ feed, currentUser, gameId }: FeedProps) {
             value={chatMessage}
             onChange={(e) => setChatMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 bg-slate-700 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="flex-1 bg-slate-50 text-slate-900 rounded px-3 py-2 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button
             type="submit"
-            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded font-medium transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition-colors"
           >
             Send
           </button>

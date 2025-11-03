@@ -22,11 +22,11 @@ export function CreateGameModal({ isOpen, onClose, onCreate }: CreateGameModalPr
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md border border-slate-700">
-        <h2 className="text-2xl font-bold mb-4 text-teal-400">Create New Game</h2>
+      <div className="bg-white rounded-lg p-6 w-full max-w-md border border-slate-200 shadow-xl">
+        <h2 className="text-2xl font-bold mb-4 text-blue-600">Create New Game</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="gameName" className="block text-sm font-medium mb-2 text-slate-300">
+            <label htmlFor="gameName" className="block text-sm font-medium mb-2 text-slate-700">
               Game Name
             </label>
             <input
@@ -35,7 +35,7 @@ export function CreateGameModal({ isOpen, onClose, onCreate }: CreateGameModalPr
               value={gameName}
               onChange={(e) => setGameName(e.target.value)}
               placeholder="Enter game name"
-              className="w-full bg-slate-700 text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full bg-slate-50 text-slate-900 rounded px-3 py-2 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               autoFocus
             />
           </div>
@@ -43,7 +43,7 @@ export function CreateGameModal({ isOpen, onClose, onCreate }: CreateGameModalPr
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded font-medium transition-colors"
+              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded font-medium transition-colors"
             >
               Cancel
             </button>
@@ -52,8 +52,8 @@ export function CreateGameModal({ isOpen, onClose, onCreate }: CreateGameModalPr
               disabled={!gameName.trim()}
               className={`px-4 py-2 rounded font-medium transition-colors ${
                 gameName.trim()
-                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                  : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >
               Create

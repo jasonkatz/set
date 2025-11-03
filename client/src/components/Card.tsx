@@ -16,8 +16,8 @@ export function Card({ card, onToggle, isSelected }: CardProps) {
       <div
         className={`rounded-lg overflow-hidden border-4 transition-all ${
           isSelected
-            ? 'border-teal-500 shadow-xl shadow-teal-500/50'
-            : 'border-slate-700 hover:border-slate-500'
+            ? 'border-blue-500 shadow-xl shadow-blue-500/50'
+            : 'border-slate-300 hover:border-slate-400'
         }`}
       >
         <img

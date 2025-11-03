@@ -64,9 +64,9 @@ export function Lobby({ user, onExit, onJoinGame }: LobbyProps) {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between bg-slate-800/30 rounded-lg p-6 backdrop-blur">
+      <div className="mb-8 flex items-center justify-between bg-white rounded-lg p-6 shadow-md border border-slate-200">
         <div className="flex items-center gap-3">
-          <span className="px-4 py-2 bg-teal-600 text-white rounded-lg font-medium">
+          <span className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
             👤 {user.nickname}
           </span>
         </div>
@@ -77,7 +77,7 @@ export function Lobby({ user, onExit, onJoinGame }: LobbyProps) {
               src={getUserIcon(nickname)}
               alt={nickname}
               title={nickname}
-              className="w-8 h-8 rounded-full border-2 border-slate-600"
+              className="w-8 h-8 rounded-full border-2 border-slate-300"
             />
           ))}
         </div>
@@ -85,10 +85,10 @@ export function Lobby({ user, onExit, onJoinGame }: LobbyProps) {
 
       {/* Games list */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4 text-teal-400">Available Games</h2>
+        <h2 className="text-2xl font-bold mb-4 text-blue-600">Available Games</h2>
         <div className="space-y-3 min-h-[200px]">
           {lobbyData.games.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-slate-500">
               <p className="text-lg">No games available</p>
               <p className="text-sm">Create a new game to get started!</p>
             </div>
@@ -104,13 +104,13 @@ export function Lobby({ user, onExit, onJoinGame }: LobbyProps) {
       <div className="flex gap-4">
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex-1 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-teal-500/50"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-blue-500/50"
         >
           Create New Game
         </button>
         <button
           onClick={handleExit}
-          className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-medium transition-colors"
         >
           Exit
         </button>

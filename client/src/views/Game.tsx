@@ -5,6 +5,9 @@ import { GameBoard } from '../components/GameBoard';
 import { Scoreboard } from '../components/Scoreboard';
 import { Feed } from '../components/Feed';
 
+// Track games we've explicitly left to prevent double cleanup during StrictMode
+const leftGames = new Set<string>();
+
 interface GameProps {
   gameId: string;
   user: User;
@@ -24,7 +27,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
   });
   const [selectedCards, setSelectedCards] = useState<Set<CardType>>(new Set());
   const userRef = useRef(user);
-  const hasLeftRef = useRef(false);
+  const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update ref when user changes
   useEffect(() => {
@@ -32,7 +35,11 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
   }, [user]);
 
   useEffect(() => {
-    hasLeftRef.current = false; // Reset on mount
+    // Cancel any pending cleanup when mounting/remounting
+    if (cleanupTimeoutRef.current) {
+      clearTimeout(cleanupTimeoutRef.current);
+      cleanupTimeoutRef.current = null;
+    }
 
     socket.gameUpdate(gameId, (data) => {
       if (data.id !== gameId) return;
@@ -51,12 +58,16 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
       }
     });
 
-    // Only cleanup on unmount if we haven't already left
+    // Only cleanup on unmount if we haven't explicitly left
+    // Use a timeout to avoid calling endGame during StrictMode's immediate remount
     return () => {
-      if (!hasLeftRef.current) {
-        socket.endGame(gameId, userRef.current, () => {
-          console.log('Left game on unmount');
-        });
+      if (!leftGames.has(gameId)) {
+        cleanupTimeoutRef.current = setTimeout(() => {
+          leftGames.add(gameId);
+          socket.endGame(gameId, userRef.current, () => {
+            console.log('Left game on unmount');
+          });
+        }, 100); // Small delay to allow StrictMode remount to cancel
       }
     };
   }, [gameId]);
@@ -91,7 +102,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
 
   const handleReturnToLobby = () => {
     // Explicitly leave the game before returning to lobby
-    hasLeftRef.current = true; // Mark that we've left to prevent double cleanup
+    leftGames.add(gameId); // Mark as left to prevent double cleanup
     socket.endGame(gameId, userRef.current, () => {
       onReturnToLobby();
     });
@@ -106,8 +117,8 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - Game board */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-800/30 rounded-lg p-6 backdrop-blur">
-            <h2 className="text-2xl font-bold mb-4 text-teal-400">
+          <div className="bg-white rounded-lg p-6 shadow-md border border-slate-200">
+            <h2 className="text-2xl font-bold mb-4 text-blue-600">
               {gameState.name || 'Game'}
             </h2>
             {gameState.cards.length > 0 ? (
@@ -122,15 +133,15 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
                   disabled={!canSubmitSet}
                   className={`w-full mt-6 py-4 rounded-lg font-bold text-xl transition-all ${
                     canSubmitSet
-                      ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg hover:shadow-teal-500/50'
-                      : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/50'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
                   {gameState.finished ? 'Game Over' : 'SET!'}
                 </button>
               </>
             ) : (
-              <div className="text-center py-12 text-slate-400">
+              <div className="text-center py-12 text-slate-500">
                 <p className="text-lg">Waiting for game to start...</p>
               </div>
             )}
@@ -144,7 +155,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={handleReturnToLobby}
-              className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+              className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-3 rounded-lg font-medium transition-colors"
             >
               Return to Lobby
             </button>
@@ -153,8 +164,8 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
               disabled={!canStart}
               className={`px-4 py-3 rounded-lg font-medium transition-colors ${
                 canStart
-                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                  : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >
               Start Game

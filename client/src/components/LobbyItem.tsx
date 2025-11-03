@@ -17,11 +17,11 @@ export function LobbyItem({ game, onJoin }: LobbyItemProps) {
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-lg p-4 backdrop-blur border border-slate-700 hover:border-teal-500 transition-colors">
+    <div className="bg-white rounded-lg p-4 shadow-md border border-slate-200 hover:border-blue-500 transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-white mb-1">{game.name}</h3>
-          <div className="flex items-center gap-4 text-sm text-slate-400">
+          <h3 className="text-lg font-bold text-slate-900 mb-1">{game.name}</h3>
+          <div className="flex items-center gap-4 text-sm text-slate-600">
             <span>{game.members.length} player{game.members.length !== 1 ? 's' : ''}</span>
             {game.members.length > 0 && (
               <span className="text-xs">({game.members.join(', ')})</span>
@@ -35,8 +35,8 @@ export function LobbyItem({ game, onJoin }: LobbyItemProps) {
             disabled={game.finished}
             className={`px-4 py-2 rounded font-medium transition-colors ${
               game.finished
-                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                : 'bg-teal-600 hover:bg-teal-700 text-white'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
             Join
