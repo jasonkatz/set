@@ -1,4 +1,3 @@
-import { io, Socket } from 'socket.io-client';
 import type {
   LobbyData,
   GameState,
@@ -6,78 +5,174 @@ import type {
   User,
 } from '@set-game/shared';
 
-class SocketClient {
-  private socket: Socket;
+const API_BASE = import.meta.env.DEV ? 'http://localhost:3000/api' : '/api';
 
-  constructor() {
-    this.socket = io({
-      transports: ['websocket', 'polling'],
+class APIClient {
+  private lobbyEventSource: EventSource | null = null;
+  private gameEventSource: EventSource | null = null;
+
+  private async fetchAPI(endpoint: string, options?: RequestInit) {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
     });
 
-    this.socket.on('reconnect_attempt', () => {
-      this.socket.io.opts.transports = ['polling', 'websocket'];
-    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(error.error || 'Request failed');
+    }
+
+    return response.json();
   }
 
-  listenForError(callback: () => void): void {
-    this.socket.on('connect_error', callback);
+  listenForError(_callback: () => void): void {
+    // For REST API, errors are handled per-request
+    // This method kept for API compatibility but is a no-op
   }
 
-  enter(nickname: string, password: string, callback: (data: { success: boolean; nickname?: string; errorMessage?: string }) => void): void {
-    this.socket.emit('USER ENTER', { nickname, password });
-    this.socket.once('USER ENTER ACK', callback);
+  async enter(nickname: string, password: string, callback: (data: { success: boolean; nickname?: string; errorMessage?: string }) => void): Promise<void> {
+    try {
+      const result = await this.fetchAPI('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ nickname, password }),
+      });
+      callback({ success: result.success, nickname: result.user?.nickname });
+    } catch (error) {
+      callback({
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Login failed'
+      });
+    }
   }
 
-  exit(user: User, callback: (success: boolean) => void): void {
-    this.socket.emit('USER EXIT', user);
-    this.socket.once('USER EXIT ACK', callback);
+  async exit(_user: User, callback: (success: boolean) => void): Promise<void> {
+    try {
+      const result = await this.fetchAPI('/auth/logout', { method: 'POST' });
+      callback(result.success);
+    } catch (error) {
+      callback(false);
+    }
   }
 
   startLobby(callback: (data: LobbyData) => void): void {
-    this.socket.emit('LOBBY LIST');
-    this.socket.once('LOBBY LIST ACK', callback);
-    this.socket.on('LOBBY UPDATE', callback);
+    if (this.lobbyEventSource) {
+      this.lobbyEventSource.close();
+    }
+
+    this.lobbyEventSource = new EventSource(`${API_BASE}/lobby/stream`, {
+      withCredentials: true,
+    });
+
+    this.lobbyEventSource.addEventListener('LOBBY UPDATE', (event) => {
+      const data = JSON.parse(event.data);
+      callback(data);
+    });
+
+    this.lobbyEventSource.onerror = (error) => {
+      console.error('Lobby SSE error:', error);
+    };
   }
 
   endLobby(): void {
-    this.socket.off('LOBBY UPDATE');
-    this.socket.emit('LOBBY LIST END');
+    if (this.lobbyEventSource) {
+      this.lobbyEventSource.close();
+      this.lobbyEventSource = null;
+    }
   }
 
-  joinGame(gameId: string, callback: (success: boolean) => void): void {
-    this.socket.emit('GAME JOIN', { id: gameId });
-    this.socket.once('GAME JOIN ACK', callback);
+  async joinGame(gameId: string, callback: (success: boolean) => void): Promise<void> {
+    try {
+      const result = await this.fetchAPI(`/games/${gameId}/join`, { method: 'POST' });
+      callback(result.success);
+    } catch (error) {
+      callback(false);
+    }
   }
 
-  createGame(name: string, callback: (data: { id: string }) => void): void {
-    this.socket.emit('GAME CREATE', { name });
-    this.socket.once('GAME CREATE ACK', callback);
+  async createGame(name: string, callback: (data: { id: string }) => void): Promise<void> {
+    try {
+      const result = await this.fetchAPI('/games', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      callback({ id: result.id });
+    } catch (error) {
+      console.error('Failed to create game:', error);
+    }
   }
 
-  startGame(gameId: string, callback: (success: boolean) => void): void {
-    this.socket.emit('GAME START', { id: gameId });
-    this.socket.once('GAME START ACK', callback);
+  async startGame(gameId: string, callback: (success: boolean) => void): Promise<void> {
+    try {
+      const result = await this.fetchAPI(`/games/${gameId}/start`, { method: 'POST' });
+      callback(result.success);
+    } catch (error) {
+      callback(false);
+    }
   }
 
   gameUpdate(gameId: string, callback: (data: GameState) => void): void {
-    this.socket.emit('GAME UPDATE INIT', { id: gameId });
-    this.socket.on('GAME UPDATE', callback);
+    if (this.gameEventSource) {
+      this.gameEventSource.close();
+    }
+
+    this.gameEventSource = new EventSource(`${API_BASE}/games/${gameId}/stream`, {
+      withCredentials: true,
+    });
+
+    this.gameEventSource.addEventListener('GAME UPDATE', (event) => {
+      const data = JSON.parse(event.data);
+      callback(data);
+    });
+
+    this.gameEventSource.onerror = (error) => {
+      console.error('Game SSE error:', error);
+    };
   }
 
-  sendChat(gameId: string, message: string): void {
-    this.socket.emit('GAME FEED', { id: gameId, type: 'chat', message });
+  async sendChat(gameId: string, message: string): Promise<void> {
+    try {
+      await this.fetchAPI(`/games/${gameId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      });
+    } catch (error) {
+      console.error('Failed to send chat:', error);
+    }
   }
 
-  submitSet(gameId: string, cards: Card[], callback: (data: { success: boolean; message: string }) => void): void {
-    this.socket.emit('GAME SET', { id: gameId, set: cards });
-    this.socket.once('GAME SET ACK', callback);
+  async submitSet(gameId: string, cards: Card[], callback: (data: { success: boolean; message: string }) => void): Promise<void> {
+    try {
+      const result = await this.fetchAPI(`/games/${gameId}/sets`, {
+        method: 'POST',
+        body: JSON.stringify({ set: cards }),
+      });
+      callback(result);
+    } catch (error) {
+      callback({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to submit set'
+      });
+    }
   }
 
-  endGame(gameId: string, user: User, callback: () => void): void {
-    this.socket.off('GAME UPDATE');
-    this.socket.emit('GAME LEAVE', { id: gameId, user });
-    this.socket.once('GAME LEAVE ACK', callback);
+  async endGame(gameId: string, _user: User, callback: () => void): Promise<void> {
+    if (this.gameEventSource) {
+      this.gameEventSource.close();
+      this.gameEventSource = null;
+    }
+
+    try {
+      await this.fetchAPI(`/games/${gameId}/leave`, { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to leave game:', error);
+    } finally {
+      callback();
+    }
   }
 }
 
-export const socket = new SocketClient();
+export const socket = new APIClient();
