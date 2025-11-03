@@ -28,8 +28,19 @@ if (missingEnvVars.length > 0) {
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Parse allowed origins from environment variable
+const allowedOrigins = isProduction
+  ? (process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || [])
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+if (isProduction && allowedOrigins.length === 0) {
+  console.error('Missing required environment variable: ALLOWED_ORIGINS. ' +
+    'Please set it to a comma-separated list of allowed origins (e.g., https://set.jasonkatz.dev,https://api.set.jasonkatz.dev)');
+  process.exit(1);
+}
+
 app.use(cors({
-  origin: isProduction ? true : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true,
 }));
 
