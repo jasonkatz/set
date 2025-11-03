@@ -27,7 +27,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
   });
   const [selectedCards, setSelectedCards] = useState<Set<CardType>>(new Set());
   const userRef = useRef(user);
-  const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cleanupTimeoutRef = useRef<number | null>(null);
 
   // Update ref when user changes
   useEffect(() => {
@@ -151,7 +151,7 @@ export function Game({ gameId, user, onReturnToLobby }: GameProps) {
         {/* Right column - Scoreboard and Feed */}
         <div className="space-y-4">
           <Scoreboard scores={gameState.scores} currentUser={user} />
-          <Feed feed={gameState.feed} currentUser={user} gameId={gameId} />
+          <Feed feed={gameState.feed} gameId={gameId} />
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={handleReturnToLobby}

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Card as CardType } from '@set-game/shared';
 
 interface CardProps {

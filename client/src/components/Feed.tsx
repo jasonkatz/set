@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FeedMessage, User } from '@set-game/shared';
+import type { FeedMessage } from '@set-game/shared';
 import { socket } from '../lib/socket';
 
 interface FeedProps {
   feed: FeedMessage[];
-  currentUser: User;
   gameId: string;
 }
 
-export function Feed({ feed, currentUser, gameId }: FeedProps) {
+export function Feed({ feed, gameId }: FeedProps) {
   const [chatMessage, setChatMessage] = useState('');
   const feedEndRef = useRef<HTMLDivElement>(null);
 

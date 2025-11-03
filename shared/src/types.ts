@@ -18,7 +18,7 @@ export interface GameOverview {
 
 export interface FeedMessage {
   username: string;
-  msgType: 'join' | 'leave' | 'start' | 'set' | 'fail' | 'chat';
+  msgType: 'join' | 'leave' | 'start' | 'set' | 'fail' | 'chat' | 'create';
   data: string | null;
 }
 
