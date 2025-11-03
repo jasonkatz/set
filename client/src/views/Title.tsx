@@ -7,18 +7,32 @@ interface TitleProps {
 
 export function Title({ onEnter }: TitleProps) {
   const [nickname, setNickname] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    if (!nickname.trim()) {
+      setError('Nickname is required');
+      return;
+    }
+
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+
     setIsLoading(true);
 
-    socket.enter(nickname || undefined, (data) => {
+    socket.enter(nickname, password, (data) => {
       setIsLoading(false);
       if (data.success && data.nickname) {
         onEnter(data.nickname);
       } else {
-        console.error('Failed to enter:', data.errorMessage);
+        setError(data.errorMessage || 'Failed to enter');
       }
     });
   };
@@ -35,9 +49,15 @@ export function Title({ onEnter }: TitleProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className={`bg-white rounded-lg p-6 shadow-lg border border-slate-200 ${isLoading ? 'opacity-50' : ''}`}>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-800 rounded">
+                {error}
+              </div>
+            )}
+
             <div className="mb-6">
               <label htmlFor="nickname" className="block text-sm font-medium mb-2 text-slate-700">
-                Nickname (optional)
+                Nickname
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">👤</span>
@@ -48,12 +68,29 @@ export function Title({ onEnter }: TitleProps) {
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="Enter your nickname"
                   disabled={isLoading}
+                  required
                   className="w-full bg-slate-50 text-slate-900 rounded pl-10 pr-3 py-3 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-500">
-                Leave blank for a random nickname
-              </p>
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="password" className="block text-sm font-medium mb-2 text-slate-700">
+                Password
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔒</span>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  disabled={isLoading}
+                  required
+                  className="w-full bg-slate-50 text-slate-900 rounded pl-10 pr-3 py-3 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                />
+              </div>
             </div>
 
             <button

@@ -23,8 +23,8 @@ class SocketClient {
     this.socket.on('connect_error', callback);
   }
 
-  enter(nickname: string | undefined, callback: (data: { success: boolean; nickname?: string; errorMessage?: string }) => void): void {
-    this.socket.emit('USER ENTER', { nickname });
+  enter(nickname: string, password: string, callback: (data: { success: boolean; nickname?: string; errorMessage?: string }) => void): void {
+    this.socket.emit('USER ENTER', { nickname, password });
     this.socket.once('USER ENTER ACK', callback);
   }
 

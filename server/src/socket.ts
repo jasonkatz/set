@@ -41,10 +41,18 @@ const clientConnected = (socket: Socket): void => {
     delete connectedClients[socket.id];
   });
 
-  socket.on('USER ENTER', (data: { nickname?: string }) => {
-    const user = app.createUser(socket.id, data.nickname);
-
+  socket.on('USER ENTER', (data: { nickname?: string; password?: string }) => {
     const obj: any = {};
+
+    if (!data.password || data.password !== process.env.GAME_PASSWORD) {
+      obj.success = false;
+      obj.errorMessage = 'Invalid password';
+      console.error(`Client with id ${socket.id} failed authentication: invalid password`);
+      connectedClients[socket.id].emit('USER ENTER ACK', obj);
+      return;
+    }
+
+    const user = app.createUser(socket.id, data.nickname);
 
     if (!user) {
       obj.success = false;
