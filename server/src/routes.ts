@@ -34,7 +34,7 @@ const requireAuth = (req: AuthRequest, res: Response, next: NextFunction): void 
   next();
 };
 
-router.post('/api/auth/login', (req: AuthRequest, res: Response) => {
+router.post('/auth/login', (req: AuthRequest, res: Response) => {
   const { nickname, password } = req.body;
 
   if (!password || password !== process.env.GAME_PASSWORD) {
@@ -58,7 +58,7 @@ router.post('/api/auth/login', (req: AuthRequest, res: Response) => {
   res.json({ success: true, user });
 });
 
-router.post('/api/auth/logout', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/auth/logout', requireAuth, (req: AuthRequest, res: Response) => {
   const userId = req.session.userId!;
   const success = Boolean(app.deleteUser(userId));
 
@@ -73,12 +73,12 @@ router.post('/api/auth/logout', requireAuth, (req: AuthRequest, res: Response) =
   res.json({ success });
 });
 
-router.get('/api/lobby', requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/lobby', requireAuth, (req: AuthRequest, res: Response) => {
   const data = app.getLobbyData();
   res.json(data);
 });
 
-router.get('/api/lobby/stream', handleVercelBypass, requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/lobby/stream', handleVercelBypass, requireAuth, (req: AuthRequest, res: Response) => {
   const userId = req.session.userId!;
   sseManager.addLobbyClient(userId, res);
 
@@ -86,7 +86,7 @@ router.get('/api/lobby/stream', handleVercelBypass, requireAuth, (req: AuthReque
   res.write(`event: LOBBY UPDATE\ndata: ${JSON.stringify(initialData)}\n\n`);
 });
 
-router.post('/api/games', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games', requireAuth, (req: AuthRequest, res: Response) => {
   const { name } = req.body;
   const userId = req.session.userId!;
 
@@ -99,7 +99,7 @@ router.post('/api/games', requireAuth, (req: AuthRequest, res: Response) => {
   res.json({ success: true, ...result });
 });
 
-router.get('/api/games/:id', requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/games/:id', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const gameData = app.getGameData(id);
 
@@ -111,7 +111,7 @@ router.get('/api/games/:id', requireAuth, (req: AuthRequest, res: Response) => {
   res.json(gameData);
 });
 
-router.get('/api/games/:id/stream', handleVercelBypass, requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/games/:id/stream', handleVercelBypass, requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.session.userId!;
 
@@ -126,7 +126,7 @@ router.get('/api/games/:id/stream', handleVercelBypass, requireAuth, (req: AuthR
   res.write(`event: GAME UPDATE\ndata: ${JSON.stringify(gameData)}\n\n`);
 });
 
-router.post('/api/games/:id/join', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/join', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.session.userId!;
 
@@ -140,7 +140,7 @@ router.post('/api/games/:id/join', requireAuth, (req: AuthRequest, res: Response
   res.json({ success: true });
 });
 
-router.post('/api/games/:id/leave', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/leave', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.session.userId!;
 
@@ -154,7 +154,7 @@ router.post('/api/games/:id/leave', requireAuth, (req: AuthRequest, res: Respons
   res.json({ success: true });
 });
 
-router.post('/api/games/:id/start', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/start', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.session.userId!;
 
@@ -168,7 +168,7 @@ router.post('/api/games/:id/start', requireAuth, (req: AuthRequest, res: Respons
   res.json({ success: true });
 });
 
-router.post('/api/games/:id/sets', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/sets', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { set } = req.body;
   const userId = req.session.userId!;
@@ -182,7 +182,7 @@ router.post('/api/games/:id/sets', requireAuth, (req: AuthRequest, res: Response
   res.json(result);
 });
 
-router.post('/api/games/:id/messages', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/messages', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
   const userId = req.session.userId!;

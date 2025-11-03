@@ -70,7 +70,7 @@ if (isProduction) {
   const clientBuildPath = path.join(__dirname, '../../client/dist');
   app.use(express.static(clientBuildPath));
 
-  app.get(/^\/(?!api).*/, (req, res) => {
+  app.get(/^\/(?!(auth|lobby|games)).*/, (req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
 }
