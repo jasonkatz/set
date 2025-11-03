@@ -1,8 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
-import session from 'express-session';
+import cookieSession from 'cookie-session';
 import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import consoleStamp from 'console-stamp';
 import router from './routes.js';
 import { sseManager } from './sse.js';
@@ -40,18 +39,14 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(cookieParser());
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'set-game-secret-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: isProduction,
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: isProduction ? 'none' : 'lax',
-  },
+app.use(cookieSession({
+  name: 'session',
+  keys: [process.env.SESSION_SECRET || 'set-game-secret-change-in-production'],
+  maxAge: 24 * 60 * 60 * 1000,
+  secure: isProduction,
+  httpOnly: true,
+  sameSite: isProduction ? 'none' : 'lax',
 }));
 
 app.use(router);

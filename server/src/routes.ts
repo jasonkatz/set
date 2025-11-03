@@ -1,32 +1,19 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
 import * as app from './app.js';
 import { sseManager } from './sse.js';
 
 const router = Router();
 
-declare module 'express-session' {
-  interface SessionData {
-    userId: string;
-    nickname: string;
-  }
-}
-
-interface AuthRequest extends Request {
-  session: Request['session'] & {
-    userId?: string;
-    nickname?: string;
-  };
-}
-
-const requireAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (!req.session.userId) {
+const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.session || !req.session.userId) {
     res.status(401).json({ error: 'Not authenticated' });
     return;
   }
   next();
 };
 
-router.post('/auth/login', (req: AuthRequest, res: Response) => {
+router.post('/auth/login', (req: Request, res: Response) => {
   const { nickname, password } = req.body;
 
   if (!password || password !== process.env.GAME_PASSWORD) {
@@ -34,7 +21,7 @@ router.post('/auth/login', (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const userId = req.sessionID;
+  const userId = randomUUID();
   const user = app.createUser(userId, nickname);
 
   if (!user) {
@@ -42,52 +29,40 @@ router.post('/auth/login', (req: AuthRequest, res: Response) => {
     return;
   }
 
-  req.session.userId = userId;
-  req.session.nickname = user.nickname;
+  req.session!.userId = userId;
+  req.session!.nickname = user.nickname;
 
-  req.session.save((err) => {
-    if (err) {
-      console.error('Session save error:', err);
-      res.status(500).json({ success: false, error: 'Failed to save session' });
-      return;
-    }
-
-    console.log(`User ${user.nickname} (${userId}) logged in`);
-    res.json({ success: true, user });
-  });
+  console.log(`User ${user.nickname} (${userId}) logged in`);
+  res.json({ success: true, user });
 });
 
-router.post('/auth/logout', requireAuth, (req: AuthRequest, res: Response) => {
-  const userId = req.session.userId!;
+router.post('/auth/logout', requireAuth, (req: Request, res: Response) => {
+  const userId = req.session!.userId!;
   const success = Boolean(app.deleteUser(userId));
 
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Session destruction error:', err);
-    }
-  });
+  req.session = null;
 
   console.log(`User ${userId} logged out`);
 
   res.json({ success });
 });
 
-router.get('/lobby', requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/lobby', requireAuth, (req: Request, res: Response) => {
   const data = app.getLobbyData();
   res.json(data);
 });
 
-router.get('/lobby/stream', requireAuth, (req: AuthRequest, res: Response) => {
-  const userId = req.session.userId!;
+router.get('/lobby/stream', requireAuth, (req: Request, res: Response) => {
+  const userId = req.session!.userId!;
   sseManager.addLobbyClient(userId, res);
 
   const initialData = app.getLobbyData();
   res.write(`event: LOBBY UPDATE\ndata: ${JSON.stringify(initialData)}\n\n`);
 });
 
-router.post('/games', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games', requireAuth, (req: Request, res: Response) => {
   const { name } = req.body;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   if (!name) {
     res.status(400).json({ success: false, error: 'Game name is required' });
@@ -98,7 +73,7 @@ router.post('/games', requireAuth, (req: AuthRequest, res: Response) => {
   res.json({ success: true, ...result });
 });
 
-router.get('/games/:id', requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/games/:id', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
   const gameData = app.getGameData(id);
 
@@ -110,9 +85,9 @@ router.get('/games/:id', requireAuth, (req: AuthRequest, res: Response) => {
   res.json(gameData);
 });
 
-router.get('/games/:id/stream', requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/games/:id/stream', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   const gameData = app.getGameData(id);
   if (!gameData) {
@@ -125,9 +100,9 @@ router.get('/games/:id/stream', requireAuth, (req: AuthRequest, res: Response) =
   res.write(`event: GAME UPDATE\ndata: ${JSON.stringify(gameData)}\n\n`);
 });
 
-router.post('/games/:id/join', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/join', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   const success = app.joinGame(id, userId);
 
@@ -139,9 +114,9 @@ router.post('/games/:id/join', requireAuth, (req: AuthRequest, res: Response) =>
   res.json({ success: true });
 });
 
-router.post('/games/:id/leave', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/leave', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   const success = app.leaveGame(id, userId);
 
@@ -153,9 +128,9 @@ router.post('/games/:id/leave', requireAuth, (req: AuthRequest, res: Response) =
   res.json({ success: true });
 });
 
-router.post('/games/:id/start', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/start', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   const success = app.startGame(id, userId);
 
@@ -167,10 +142,10 @@ router.post('/games/:id/start', requireAuth, (req: AuthRequest, res: Response) =
   res.json({ success: true });
 });
 
-router.post('/games/:id/sets', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/sets', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
   const { set } = req.body;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   if (!set || !Array.isArray(set)) {
     res.status(400).json({ success: false, error: 'Invalid set format' });
@@ -181,10 +156,10 @@ router.post('/games/:id/sets', requireAuth, (req: AuthRequest, res: Response) =>
   res.json(result);
 });
 
-router.post('/games/:id/messages', requireAuth, (req: AuthRequest, res: Response) => {
+router.post('/games/:id/messages', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
-  const userId = req.session.userId!;
+  const userId = req.session!.userId!;
 
   if (!message) {
     res.status(400).json({ success: false, error: 'Message is required' });
