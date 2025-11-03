@@ -18,14 +18,6 @@ interface AuthRequest extends Request {
   };
 }
 
-const handleVercelBypass = (req: Request, res: Response, next: NextFunction): void => {
-  const queryBypass = req.query.vercel_protection_bypass;
-  if (queryBypass && typeof queryBypass === 'string') {
-    req.headers['x-vercel-protection-bypass'] = queryBypass;
-  }
-  next();
-};
-
 const requireAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.session.userId) {
     res.status(401).json({ error: 'Not authenticated' });
@@ -78,7 +70,7 @@ router.get('/lobby', requireAuth, (req: AuthRequest, res: Response) => {
   res.json(data);
 });
 
-router.get('/lobby/stream', handleVercelBypass, requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/lobby/stream', requireAuth, (req: AuthRequest, res: Response) => {
   const userId = req.session.userId!;
   sseManager.addLobbyClient(userId, res);
 
@@ -111,7 +103,7 @@ router.get('/games/:id', requireAuth, (req: AuthRequest, res: Response) => {
   res.json(gameData);
 });
 
-router.get('/games/:id/stream', handleVercelBypass, requireAuth, (req: AuthRequest, res: Response) => {
+router.get('/games/:id/stream', requireAuth, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.session.userId!;
 
